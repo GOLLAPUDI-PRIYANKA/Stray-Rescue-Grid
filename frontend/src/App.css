@@ -1,156 +1,184 @@
-/* ================================
-   RESCUE TICKETS
-================================ */
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
 
-.ticket-list-section {
-  margin-top: 30px;
-  padding: 28px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
-.ticket-list-section h2 {
-  margin: 0 0 20px;
-  color: #172b4d;
-  font-size: 24px;
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
 }
 
-/* Ticket grid */
-
-.ticket-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
-}
-
-/* Individual card */
-
-.ticket-card {
-  background: #ffffff;
-  border: 1px solid #dbe3ec;
-  border-radius: 14px;
-  padding: 20px;
-  cursor: pointer;
-  transition: 0.2s ease;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.ticket-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.09);
-  border-color: #94a3b8;
-}
-
-/* Header */
-
-.ticket-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.ticket-card-header h3 {
-  margin: 0;
-  font-size: 20px;
-  color: #172b4d;
-}
-
-/* Priority */
-
-.priority-badge {
-  padding: 5px 11px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.priority-critical {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.priority-high {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
-.priority-normal {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.priority-low {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-/* Information */
-
-.ticket-card-body {
+#center {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
 }
 
-.ticket-info {
+#next-steps {
   display: flex;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 
-.info-label {
-  font-weight: 600;
-  color: #64748b;
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
-/* Description */
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
 
-.ticket-description {
-  color: #334155;
-  line-height: 1.5;
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
 }
 
-/* Location */
-
-.ticket-location {
-  color: #475569;
-  font-size: 14px;
-  background: #f8fafc;
-  padding: 10px;
-  border-radius: 8px;
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
 }
 
-/* Footer */
-
-.ticket-card-footer {
-  margin-top: 18px;
-}
-
-.ticket-card-footer button {
+.ticks {
+  position: relative;
   width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: #172b4d;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
 
-.ticket-card-footer button:hover {
-  background: #263f68;
-}
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
 
-/* Empty state */
-
-.no-tickets {
-  padding: 30px;
-  text-align: center;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 10px;
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
 }
