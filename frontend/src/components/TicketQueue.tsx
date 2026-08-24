@@ -4,9 +4,7 @@ import TicketCard from "./TicketCard";
 interface TicketQueueProps {
   tickets: Ticket[];
   onTicketSelect: (ticket: Ticket) => void;
-  
 }
-
 
 export default function TicketQueue({
   tickets,
@@ -18,7 +16,7 @@ export default function TicketQueue({
         <TicketCard
           key={ticket.id}
           ticket={ticket}
-          onClick={onTicketSelect}
+          onClick={() => onTicketSelect(ticket)}
         />
       ))}
 
