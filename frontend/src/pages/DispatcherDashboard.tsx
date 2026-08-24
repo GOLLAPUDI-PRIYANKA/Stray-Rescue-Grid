@@ -1,46 +1,43 @@
 import { useMemo, useState } from "react";
-import FilterPanel from "../components/FilterPanel";
+
+import DispatcherMap from "../components/DispatcherMap";
 import TicketQueue from "../components/TicketQueue";
-import { mockTickets } from "../data/mockTickets";
 import TicketDetails from "../components/TicketDetails";
-import type {
-  Ticket,
-  Priority,
-  TicketStatus,
-  AnimalType,
-} from "../types/ticket";
 
-function DispatcherDashboard() {
-  // All tickets
-  const [tickets] = useState<Ticket[]>(mockTickets);
+import { mockTickets } from "../data/mockTickets";
 
-  // Selected ticket from Task 1
+import type { Ticket } from "../types/ticket";
+
+export default function DispatcherDashboard() {
+  // =========================
+  // STATE
+  // =========================
+
+  const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState("");
+  const [animalType, setAnimalType] = useState("");
+
   const [selectedTicket, setSelectedTicket] =
     useState<Ticket | null>(null);
 
-  // Task 2 filters
-  const [priority, setPriority] =
-    useState<Priority | "All">("All");
+  // =========================
+  // FILTER TICKETS
+  // =========================
 
-  const [status, setStatus] =
-    useState<TicketStatus | "All">("All");
-
-  const [animalType, setAnimalType] =
-    useState<AnimalType | "All">("All");
-
-  // Filter tickets
   const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
+    return mockTickets.filter((ticket) => {
       const priorityMatch =
-        priority === "All" ||
+        priority === "" ||
         ticket.priority_level === priority;
 
       const statusMatch =
-        status === "All" ||
+        status === "" ||
         ticket.status === status;
 
+      // IMPORTANT:
+      // Ticket uses animal_type
       const animalMatch =
-        animalType === "All" ||
+        animalType === "" ||
         ticket.animal_type === animalType;
 
       return (
@@ -49,76 +46,215 @@ function DispatcherDashboard() {
         animalMatch
       );
     });
-  }, [tickets, priority, status, animalType]);
+  }, [priority, status, animalType]);
 
-  // Clear all filters
+  // =========================
+  // CLEAR FILTERS
+  // =========================
+
   const clearFilters = () => {
-    setPriority("All");
-    setStatus("All");
-    setAnimalType("All");
+    setPriority("");
+    setStatus("");
+    setAnimalType("");
   };
 
+  // =========================
+  // DASHBOARD
+  // =========================
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="dashboard">
 
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Dispatcher Dashboard
-        </h1>
+      {/* ================= HEADER ================= */}
 
-        <p className="mt-1 text-gray-600">
+      <div className="dashboard-header">
+        <h1>Dispatcher Dashboard</h1>
+
+        <p>
           Manage and filter rescue tickets
         </p>
       </div>
 
-      {/* Task 2 - Filter Panel */}
-      <FilterPanel
-        priority={priority}
-        status={status}
-        animalType={animalType}
-        onPriorityChange={setPriority}
-        onStatusChange={setStatus}
-        onAnimalTypeChange={setAnimalType}
-        onClear={clearFilters}
-      />
+      {/* ================= FILTERS ================= */}
 
-      {/* Ticket count */}
-      <div className="mb-4 rounded-lg bg-white p-4 shadow">
-        <p className="text-sm text-gray-600">
-          Showing{" "}
-          <span className="font-bold text-gray-900">
-            {filteredTickets.length}
-          </span>{" "}
-          of{" "}
-          <span className="font-bold text-gray-900">
-            {tickets.length}
-          </span>{" "}
-          tickets
-        </p>
+      <div className="filter-panel">
+
+        <div className="filter-header">
+
+          <h2>Ticket Filters</h2>
+
+          <button
+            className="clear-filters"
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </button>
+
+        </div>
+
+        <div className="filter-controls">
+
+          {/* PRIORITY */}
+
+          <div className="filter-group">
+            <label htmlFor="priority">
+              Priority
+            </label>
+
+            <select
+              id="priority"
+              value={priority}
+              onChange={(e) =>
+                setPriority(e.target.value)
+              }
+            >
+              <option value="">
+                All Priorities
+              </option>
+
+              <option value="Critical">
+                Critical
+              </option>
+
+              <option value="High">
+                High
+              </option>
+
+              <option value="Normal">
+                Normal
+              </option>
+
+              <option value="Low">
+                Low
+              </option>
+            </select>
+          </div>
+
+          {/* STATUS */}
+
+          <div className="filter-group">
+            <label htmlFor="status">
+              Status
+            </label>
+
+            <select
+              id="status"
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value)
+              }
+            >
+              <option value="">
+                All Statuses
+              </option>
+
+              <option value="New">
+                New
+              </option>
+
+              <option value="Under Review">
+                Under Review
+              </option>
+
+              <option value="Assigned">
+                Assigned
+              </option>
+
+              <option value="Resolved">
+                Resolved
+              </option>
+            </select>
+          </div>
+
+          {/* ANIMAL TYPE */}
+
+          <div className="filter-group">
+            <label htmlFor="animalType">
+              Animal Type
+            </label>
+
+            <select
+              id="animalType"
+              value={animalType}
+              onChange={(e) =>
+                setAnimalType(e.target.value)
+              }
+            >
+              <option value="">
+                All Animals
+              </option>
+
+              <option value="Dog">
+                Dog
+              </option>
+
+              <option value="Cat">
+                Cat
+              </option>
+
+              <option value="Bird">
+                Bird
+              </option>
+            </select>
+          </div>
+
+        </div>
       </div>
 
-      {/* Task 1 - Ticket Queue */}
-      <TicketQueue
-        tickets={filteredTickets}
-        onTicketSelect={setSelectedTicket}
-      />
+      {/* ================= TICKET COUNT ================= */}
 
-      {/* Selected ticket */}
+      <div className="ticket-count">
+        Showing{" "}
+        <strong>
+          {filteredTickets.length}
+        </strong>{" "}
+        of{" "}
+        <strong>
+          {mockTickets.length}
+        </strong>{" "}
+        tickets
+      </div>
+
+      {/* ================= MAP ================= */}
+
+      <div className="map-section">
+
+        <h2>Rescue Location Map</h2>
+
+        <div className="map-container">
+          <DispatcherMap
+            tickets={filteredTickets}
+          />
+        </div>
+
+      </div>
+
+      {/* ================= TICKET LIST ================= */}
+
+      <div className="ticket-list-section">
+
+        <h2>Rescue Tickets</h2>
+
+        <TicketQueue
+          tickets={filteredTickets}
+          onTicketSelect={setSelectedTicket}
+        />
+
+      </div>
+
+      {/* ================= TICKET DETAILS ================= */}
+
       {selectedTicket && (
-        <div className="mt-6 rounded-lg bg-white p-4 shadow">
-          <h2 className="text-lg font-semibold">
-            Selected Ticket
-          </h2>
+        <div className="ticket-details-section">
 
-          <p className="mt-2 text-gray-700">
-            Ticket ID: {selectedTicket.id}
-          </p>
+          <TicketDetails
+            ticket={selectedTicket}
+            onClose={() => setSelectedTicket(null)}
+          />
+
         </div>
       )}
 
     </div>
   );
 }
-
-export default DispatcherDashboard;

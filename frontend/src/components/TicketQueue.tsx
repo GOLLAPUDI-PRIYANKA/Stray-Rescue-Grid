@@ -1,5 +1,5 @@
-import type { Ticket } from "../types/ticket";
 import TicketCard from "./TicketCard";
+import type { Ticket } from "../types/ticket";
 
 interface TicketQueueProps {
   tickets: Ticket[];
@@ -11,19 +11,21 @@ export default function TicketQueue({
   onTicketSelect,
 }: TicketQueueProps) {
   return (
-    <div className="space-y-3">
-      {tickets.map((ticket) => (
-        <TicketCard
-          key={ticket.id}
-          ticket={ticket}
-          onClick={() => onTicketSelect(ticket)}
-        />
-      ))}
-
-      {tickets.length === 0 && (
-        <p className="py-8 text-center text-gray-500">
-          No tickets found.
-        </p>
+    <div className="ticket-queue">
+      {tickets.length === 0 ? (
+        <div className="no-tickets">
+          No rescue tickets found.
+        </div>
+      ) : (
+        <div className="ticket-grid">
+          {tickets.map((ticket) => (
+            <TicketCard
+              key={ticket.id}
+              ticket={ticket}
+              onClick={() => onTicketSelect(ticket)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
