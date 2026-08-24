@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import FilterPanel from "../components/FilterPanel";
 import TicketQueue from "../components/TicketQueue";
 import { mockTickets } from "../data/mockTickets";
-
+import TicketDetails from "../components/TicketDetails";
 import type {
   Ticket,
   Priority,
