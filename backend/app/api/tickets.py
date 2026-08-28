@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.core.security import require_roles
 from app.db.session import get_db
 from app.models.ticket import RescueTicket, TicketStatus
+from app.models.user import User, UserRole
 from app.schemas.ticket import TicketCreate, TicketResponse, TicketUpdate
 
 
@@ -31,12 +33,19 @@ def tickets_health():
 def create_ticket(
     ticket_data: TicketCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.ADMIN,
+        )
+    ),
 ):
     ticket_code = f"SR-{uuid4().hex[:8].upper()}"
 
     ticket = RescueTicket(
         ticket_code=ticket_code,
-        reported_by_id=None,
+        reported_by_id=current_user.id,
         animal_type=ticket_data.animal_type,
         description=ticket_data.description,
         severity=ticket_data.severity,
@@ -67,6 +76,14 @@ def create_ticket(
 )
 def get_tickets(
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.FACILITY_MANAGER,
+            UserRole.ADMIN,
+        )
+    ),
 ):
     tickets = (
         db.query(RescueTicket)
@@ -84,6 +101,15 @@ def get_tickets(
 def get_ticket(
     ticket_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.FACILITY_MANAGER,
+            UserRole.ADMIN,
+        )
+    ),
 ):
     ticket = (
         db.query(RescueTicket)
@@ -108,6 +134,13 @@ def update_ticket(
     ticket_id: int,
     ticket_data: TicketUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.ADMIN,
+        )
+    ),
 ):
     ticket = (
         db.query(RescueTicket)
@@ -150,6 +183,13 @@ def update_ticket(
 def close_ticket(
     ticket_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.VOLUNTEER,
+            UserRole.DISPATCHER,
+            UserRole.ADMIN,
+        )
+    ),
 ):
     ticket = (
         db.query(RescueTicket)

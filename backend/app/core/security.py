@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta, timezone
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 pwd_context = CryptContext(
@@ -79,7 +80,7 @@ def get_current_user(
         if user_id is None:
             raise credentials_exception
 
-    except JWTError:
+    except (JWTError, ValueError, TypeError):
         raise credentials_exception
 
     user = (
@@ -98,3 +99,20 @@ def get_current_user(
         )
 
     return user
+
+
+def require_roles(
+    *allowed_roles: UserRole,
+) -> Callable:
+    def role_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action",
+            )
+
+        return current_user
+
+    return role_checker
