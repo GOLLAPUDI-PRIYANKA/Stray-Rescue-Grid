@@ -24,16 +24,31 @@ class UserStatus(str, Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
         index=True,
         nullable=False,
     )
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    phone: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
 
     role: Mapped[UserRole] = mapped_column(
         SqlEnum(UserRole, name="user_role"),
@@ -64,4 +79,10 @@ class User(Base):
         "RescueTicket",
         back_populates="reporter",
         foreign_keys="RescueTicket.reported_by_id",
+    )
+
+    assignments = relationship(
+        "TicketAssignment",
+        back_populates="assigned_to",
+        foreign_keys="TicketAssignment.assigned_to_id",
     )

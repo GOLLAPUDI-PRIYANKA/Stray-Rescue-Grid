@@ -165,6 +165,12 @@ class RescueTicket(Base):
         order_by="TicketStatusHistory.created_at",
     )
 
+    assignments = relationship(
+        "TicketAssignment",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+    )
+
 
 class TicketMedia(Base):
     __tablename__ = "ticket_media"
@@ -172,7 +178,10 @@ class TicketMedia(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     ticket_id: Mapped[int] = mapped_column(
-        ForeignKey("rescue_tickets.id", ondelete="CASCADE")
+        ForeignKey(
+            "rescue_tickets.id",
+            ondelete="CASCADE",
+        )
     )
 
     file_url: Mapped[str] = mapped_column(

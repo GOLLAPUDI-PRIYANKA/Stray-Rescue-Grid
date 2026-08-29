@@ -10,6 +10,7 @@ from app.models import (
     RescueTicket,
     TicketMedia,
     TicketStatusHistory,
+    TicketAssignment,
     User,
 )
 

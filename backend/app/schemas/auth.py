@@ -17,6 +17,7 @@ class UserRegister(BaseModel):
         default=None,
         max_length=30,
     )
+    role: UserRole = UserRole.CITIZEN
 
 
 class UserResponse(BaseModel):
@@ -30,6 +31,8 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(

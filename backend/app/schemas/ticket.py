@@ -32,6 +32,8 @@ class TicketResponse(BaseModel):
     longitude: float
     address_text: str | None
     status: TicketStatus
+
+
 class TicketUpdate(BaseModel):
     animal_type: AnimalType | None = None
     description: str | None = Field(
@@ -43,3 +45,11 @@ class TicketUpdate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     address_text: str | None = None
+
+
+class TicketStatusUpdate(BaseModel):
+    status: TicketStatus
+    note: str | None = Field(
+        default=None,
+        max_length=1000,
+    )
