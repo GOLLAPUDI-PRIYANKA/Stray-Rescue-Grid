@@ -16,4 +16,5 @@ class AssignmentResponse(BaseModel):
     assigned_by_id: int | None
     status: str
     note: str | None
+    outcome: str | None
     created_at: datetime
