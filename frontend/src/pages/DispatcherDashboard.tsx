@@ -1,190 +1,260 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+import DispatcherMap from "../components/DispatcherMap";
 import TicketQueue from "../components/TicketQueue";
+import TicketDetails from "../components/TicketDetails";
+
 import { mockTickets } from "../data/mockTickets";
+
 import type { Ticket } from "../types/ticket";
 
 export default function DispatcherDashboard() {
-  const [tickets] = useState<Ticket[]>(mockTickets);
+  // =========================
+  // STATE
+  // =========================
+
+  const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState("");
+  const [animalType, setAnimalType] = useState("");
 
   const [selectedTicket, setSelectedTicket] =
     useState<Ticket | null>(null);
 
-  const openCount = tickets.filter(
-    (ticket) => ticket.status !== "Closed"
-  ).length;
+  // =========================
+  // FILTER TICKETS
+  // =========================
 
-  const criticalCount = tickets.filter(
-    (ticket) => ticket.priority_level === "Critical"
-  ).length;
+  const filteredTickets = useMemo(() => {
+    return mockTickets.filter((ticket) => {
+      const priorityMatch =
+        priority === "" ||
+        ticket.priority_level === priority;
 
-  const completedCount = tickets.filter(
-    (ticket) => ticket.status === "Rescued"
-  ).length;
+      const statusMatch =
+        status === "" ||
+        ticket.status === status;
+
+      // IMPORTANT:
+      // Ticket uses animal_type
+      const animalMatch =
+        animalType === "" ||
+        ticket.animal_type === animalType;
+
+      return (
+        priorityMatch &&
+        statusMatch &&
+        animalMatch
+      );
+    });
+  }, [priority, status, animalType]);
+
+  // =========================
+  // CLEAR FILTERS
+  // =========================
+
+  const clearFilters = () => {
+    setPriority("");
+    setStatus("");
+    setAnimalType("");
+  };
+
+  // =========================
+  // DASHBOARD
+  // =========================
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="dashboard">
 
-      <header className="border-b bg-white px-6 py-4">
-        <h1 className="text-2xl font-bold">
-          Dispatcher Command Center
-        </h1>
+      {/* ================= HEADER ================= */}
 
-        <p className="text-sm text-gray-500">
-          Stray Animal Rescue & Veterinary Dispatch Grid
+      <div className="dashboard-header">
+        <h1>Dispatcher Dashboard</h1>
+
+        <p>
+          Manage and filter rescue tickets
         </p>
-      </header>
+      </div>
 
-      <main className="p-6">
+      {/* ================= FILTERS ================= */}
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="filter-panel">
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">
-              Open Cases
-            </p>
+        <div className="filter-header">
 
-            <p className="mt-2 text-3xl font-bold">
-              {openCount}
-            </p>
-          </div>
+          <h2>Ticket Filters</h2>
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">
-              Critical Cases
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-red-600">
-              {criticalCount}
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">
-              Completed Rescues
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-green-600">
-              {completedCount}
-            </p>
-          </div>
+          <button
+            className="clear-filters"
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </button>
 
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="filter-controls">
 
-          <section className="rounded-lg bg-gray-50 p-4">
+          {/* PRIORITY */}
 
-            <div className="mb-4 flex justify-between">
-              <h2 className="text-lg font-semibold">
-                Rescue Tickets
-              </h2>
+          <div className="filter-group">
+            <label htmlFor="priority">
+              Priority
+            </label>
 
-              <span className="text-sm text-gray-500">
-                {tickets.length} tickets
-              </span>
-            </div>
+            <select
+              id="priority"
+              value={priority}
+              onChange={(e) =>
+                setPriority(e.target.value)
+              }
+            >
+              <option value="">
+                All Priorities
+              </option>
 
-            <TicketQueue
-              tickets={tickets}
-              onTicketSelect={setSelectedTicket}
-            />
+              <option value="Critical">
+                Critical
+              </option>
 
-          </section>
+              <option value="High">
+                High
+              </option>
 
-          <section className="flex min-h-[500px] items-center justify-center rounded-lg bg-gray-200">
+              <option value="Normal">
+                Normal
+              </option>
 
-            <div className="text-center">
-              <p className="text-4xl">🗺️</p>
+              <option value="Low">
+                Low
+              </option>
+            </select>
+          </div>
 
-              <h2 className="mt-3 text-lg font-semibold">
-                Live Rescue Map
-              </h2>
+          {/* STATUS */}
 
-              <p className="text-sm text-gray-500">
-                Map will be added in Task 3.
-              </p>
-            </div>
+          <div className="filter-group">
+            <label htmlFor="status">
+              Status
+            </label>
 
-          </section>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value)
+              }
+            >
+              <option value="">
+                All Statuses
+              </option>
+
+              <option value="New">
+                New
+              </option>
+
+              <option value="Under Review">
+                Under Review
+              </option>
+
+              <option value="Assigned">
+                Assigned
+              </option>
+
+              <option value="Resolved">
+                Resolved
+              </option>
+            </select>
+          </div>
+
+          {/* ANIMAL TYPE */}
+
+          <div className="filter-group">
+            <label htmlFor="animalType">
+              Animal Type
+            </label>
+
+            <select
+              id="animalType"
+              value={animalType}
+              onChange={(e) =>
+                setAnimalType(e.target.value)
+              }
+            >
+              <option value="">
+                All Animals
+              </option>
+
+              <option value="Dog">
+                Dog
+              </option>
+
+              <option value="Cat">
+                Cat
+              </option>
+
+              <option value="Bird">
+                Bird
+              </option>
+            </select>
+          </div>
 
         </div>
+      </div>
 
-        {selectedTicket && (
-          <section className="mt-6 rounded-lg bg-white p-6 shadow">
+      {/* ================= TICKET COUNT ================= */}
 
-            <div className="flex justify-between">
+      <div className="ticket-count">
+        Showing{" "}
+        <strong>
+          {filteredTickets.length}
+        </strong>{" "}
+        of{" "}
+        <strong>
+          {mockTickets.length}
+        </strong>{" "}
+        tickets
+      </div>
 
-              <h2 className="text-xl font-bold">
-                {selectedTicket.ticket_code}
-              </h2>
+      {/* ================= MAP ================= */}
 
-              <button
-                onClick={() => setSelectedTicket(null)}
-                className="rounded px-3 py-1 hover:bg-gray-100"
-              >
-                Close
-              </button>
+      <div className="map-section">
 
-            </div>
+        <h2>Rescue Location Map</h2>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="map-container">
+          <DispatcherMap
+            tickets={filteredTickets}
+          />
+        </div>
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Animal
-                </p>
+      </div>
 
-                <p className="font-medium">
-                  {selectedTicket.animal_type}
-                </p>
-              </div>
+      {/* ================= TICKET LIST ================= */}
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Priority
-                </p>
+      <div className="ticket-list-section">
 
-                <p className="font-medium">
-                  {selectedTicket.priority_level}
-                </p>
-              </div>
+        <h2>Rescue Tickets</h2>
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Status
-                </p>
+        <TicketQueue
+          tickets={filteredTickets}
+          onTicketSelect={setSelectedTicket}
+        />
 
-                <p className="font-medium">
-                  {selectedTicket.status}
-                </p>
-              </div>
+      </div>
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Location
-                </p>
+      {/* ================= TICKET DETAILS ================= */}
 
-                <p className="font-medium">
-                  {selectedTicket.address}
-                </p>
-              </div>
+      {selectedTicket && (
+        <div className="ticket-details-section">
 
-            </div>
+          <TicketDetails
+            ticket={selectedTicket}
+            onClose={() => setSelectedTicket(null)}
+          />
 
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">
-                Description
-              </p>
+        </div>
+      )}
 
-              <p>
-                {selectedTicket.description}
-              </p>
-            </div>
-
-          </section>
-        )}
-
-      </main>
     </div>
   );
 }

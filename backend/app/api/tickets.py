@@ -1,0 +1,400 @@
+from datetime import datetime, timezone
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app.core.security import require_roles
+from app.db.session import get_db
+from app.models.status_history import TicketStatusHistory
+from app.models.ticket import (
+    AnimalType,
+    RescueTicket,
+    Severity,
+    TicketStatus,
+)
+from app.models.user import User, UserRole
+from app.schemas.ticket import (
+    TicketCreate,
+    TicketResponse,
+    TicketStatusUpdate,
+    TicketUpdate,
+)
+from app.schemas.status_history import TicketStatusHistoryResponse
+
+
+router = APIRouter(
+    prefix="/tickets",
+    tags=["Tickets"],
+)
+
+
+@router.get("/health")
+def tickets_health():
+    return {
+        "message": "Tickets API is working"
+    }
+
+
+@router.post(
+    "/",
+    response_model=TicketResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_ticket(
+    ticket_data: TicketCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket_code = f"SR-{uuid4().hex[:8].upper()}"
+
+    ticket = RescueTicket(
+        ticket_code=ticket_code,
+        reported_by_id=current_user.id,
+        animal_type=ticket_data.animal_type,
+        description=ticket_data.description,
+        severity=ticket_data.severity,
+        latitude=ticket_data.latitude,
+        longitude=ticket_data.longitude,
+        address_text=ticket_data.address_text,
+    )
+
+    try:
+        db.add(ticket)
+        db.commit()
+        db.refresh(ticket)
+        return ticket
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create rescue ticket",
+        )
+
+
+@router.get(
+    "/",
+    response_model=list[TicketResponse],
+)
+def get_tickets(
+    status_filter: TicketStatus | None = None,
+    severity: Severity | None = None,
+    animal_type: AnimalType | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.FACILITY_MANAGER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    query = db.query(RescueTicket)
+
+    if current_user.role == UserRole.CITIZEN:
+        query = query.filter(
+            RescueTicket.reported_by_id == current_user.id
+        )
+
+    if status_filter is not None:
+        query = query.filter(
+            RescueTicket.status == status_filter
+        )
+
+    if severity is not None:
+        query = query.filter(
+            RescueTicket.severity == severity
+        )
+
+    if animal_type is not None:
+        query = query.filter(
+            RescueTicket.animal_type == animal_type
+        )
+
+    tickets = (
+        query
+        .order_by(RescueTicket.created_at.desc())
+        .all()
+    )
+
+    return tickets
+
+
+@router.get(
+    "/{ticket_id}",
+    response_model=TicketResponse,
+)
+def get_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.FACILITY_MANAGER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket = (
+        db.query(RescueTicket)
+        .filter(RescueTicket.id == ticket_id)
+        .first()
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rescue ticket not found",
+        )
+
+    if (
+        current_user.role == UserRole.CITIZEN
+        and ticket.reported_by_id != current_user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this ticket",
+        )
+
+    return ticket
+
+
+@router.patch(
+    "/{ticket_id}",
+    response_model=TicketResponse,
+)
+def update_ticket(
+    ticket_id: int,
+    ticket_data: TicketUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket = (
+        db.query(RescueTicket)
+        .filter(RescueTicket.id == ticket_id)
+        .first()
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rescue ticket not found",
+        )
+
+    update_data = ticket_data.model_dump(
+        exclude_unset=True
+    )
+
+    for field, value in update_data.items():
+        setattr(ticket, field, value)
+
+    try:
+        db.commit()
+        db.refresh(ticket)
+        return ticket
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update rescue ticket",
+        )
+
+
+@router.post(
+    "/{ticket_id}/status",
+    response_model=TicketResponse,
+)
+def update_ticket_status(
+    ticket_id: int,
+    status_data: TicketStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket = (
+        db.query(RescueTicket)
+        .filter(RescueTicket.id == ticket_id)
+        .first()
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rescue ticket not found",
+        )
+
+    old_status = ticket.status
+
+    allowed_transitions = {
+        TicketStatus.NEW: [TicketStatus.ASSIGNED],
+        TicketStatus.ASSIGNED: [TicketStatus.ACCEPTED],
+        TicketStatus.ACCEPTED: [TicketStatus.CLOSED],
+        TicketStatus.CLOSED: [],
+    }
+
+    if status_data.status == old_status:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ticket is already in this status",
+        )
+
+    if status_data.status not in allowed_transitions.get(
+        old_status,
+        [],
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Invalid status transition from "
+                f"'{old_status.value}' to "
+                f"'{status_data.status.value}'"
+            ),
+        )
+
+    ticket.status = status_data.status
+
+    status_history = TicketStatusHistory(
+        ticket_id=ticket.id,
+        old_status=old_status.value,
+        new_status=status_data.status.value,
+        changed_by_id=current_user.id,
+        note=status_data.note,
+    )
+
+    try:
+        db.add(status_history)
+        db.commit()
+        db.refresh(ticket)
+        return ticket
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update ticket status",
+        )
+
+
+@router.post(
+    "/{ticket_id}/close",
+    response_model=TicketResponse,
+)
+def close_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.VOLUNTEER,
+            UserRole.DISPATCHER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket = (
+        db.query(RescueTicket)
+        .filter(RescueTicket.id == ticket_id)
+        .first()
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rescue ticket not found",
+        )
+
+    if ticket.status == TicketStatus.CLOSED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Rescue ticket is already closed",
+        )
+
+    ticket.status = TicketStatus.CLOSED
+    ticket.closed_at = datetime.now(timezone.utc)
+
+    try:
+        db.commit()
+        db.refresh(ticket)
+        return ticket
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to close rescue ticket",
+        )
+
+
+@router.get(
+    "/{ticket_id}/history",
+    response_model=list[TicketStatusHistoryResponse],
+)
+def get_ticket_status_history(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.CITIZEN,
+            UserRole.DISPATCHER,
+            UserRole.VOLUNTEER,
+            UserRole.FACILITY_MANAGER,
+            UserRole.ADMIN,
+        )
+    ),
+):
+    ticket = (
+        db.query(RescueTicket)
+        .filter(RescueTicket.id == ticket_id)
+        .first()
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rescue ticket not found",
+        )
+
+    if (
+        current_user.role == UserRole.CITIZEN
+        and ticket.reported_by_id != current_user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this ticket history",
+        )
+
+    history = (
+        db.query(TicketStatusHistory)
+        .filter(TicketStatusHistory.ticket_id == ticket_id)
+        .order_by(TicketStatusHistory.created_at.asc())
+        .all()
+    )
+
+    return history
