@@ -39,7 +39,7 @@ export default function ReportPage() {
     formData.set("longitude", String(location.lng));
 
     void createCitizenTicket(formData).then(({ ticket_code }) => {
-      navigate(`/confirmation/${ticket_code}`);
+      navigate(`/report/confirmation/${ticket_code}`);
     }).finally(() => setSubmitting(false));
   };
 
