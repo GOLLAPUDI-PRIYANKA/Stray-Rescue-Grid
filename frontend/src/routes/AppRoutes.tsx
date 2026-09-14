@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "../components/Layout";
 import Home from "../pages/Home";
 import DispatcherDashboard from "../pages/DispatcherDashboard";
+import ReportPage from "../pages/ReportPage";
+import ConfirmationPage from "../pages/ConfirmationPage";
 
 function NotFound() {
   return (
@@ -33,6 +35,16 @@ export default function AppRoutes() {
         <Route
           path="/"
           element={<Home />}
+        />
+
+        {/* CITIZEN REPORTING */}
+        <Route
+          path="/report"
+          element={<ReportPage />}
+        />
+        <Route
+         path="/report/confirmation/:ticketId"
+          element={<ConfirmationPage />}
         />
 
         {/* DISPATCHER ONLY */}
