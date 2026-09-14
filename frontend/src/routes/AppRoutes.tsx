@@ -5,6 +5,8 @@ import Home from "../pages/Home";
 import DispatcherDashboard from "../pages/DispatcherDashboard";
 import ReportPage from "../pages/ReportPage";
 import ConfirmationPage from "../pages/ConfirmationPage";
+import LoginPage from "../pages/LoginPage";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function NotFound() {
   return (
@@ -46,7 +48,14 @@ export default function AppRoutes() {
         {/* CITIZEN REPORTING */}
         <Route
           path="/report"
-          element={<ReportPage />}
+          element={<ProtectedRoute />}
+        >
+          <Route index element={<ReportPage />} />
+        </Route>
+
+        <Route
+          path="/login"
+          element={<LoginPage />}
         />
 
         <Route

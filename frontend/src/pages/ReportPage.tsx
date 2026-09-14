@@ -3,10 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import ReportMapPicker from "../components/ReportMapPicker";
 import useGeolocation from "../hooks/useGeolocation";
 import { createCitizenTicket } from "../services/tickets";
+import { AuthenticationError } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 import type { AnimalType, ReportLocation } from "../types/report";
 
 export default function ReportPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [animalType, setAnimalType] = useState<AnimalType>("dog");
   const [description, setDescription] = useState("");
   const [contact, setContact] = useState("");
@@ -38,9 +41,19 @@ export default function ReportPage() {
     formData.set("latitude", String(location.lat));
     formData.set("longitude", String(location.lng));
 
-    void createCitizenTicket(formData).then(({ ticket_code }) => {
-      navigate(`/confirmation/${ticket_code}`);
-    }).finally(() => setSubmitting(false));
+    void createCitizenTicket(formData)
+      .then(({ ticket_code }) => {
+        navigate(`/confirmation/${ticket_code}`);
+      })
+      .catch((reason) => {
+        if (reason instanceof AuthenticationError) {
+          logout();
+          navigate("/login", { replace: true, state: { from: "/report" } });
+          return;
+        }
+        setLocationError(reason instanceof Error ? reason.message : "Unable to submit the report.");
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (
