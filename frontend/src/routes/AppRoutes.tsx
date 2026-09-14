@@ -37,20 +37,21 @@ export default function AppRoutes() {
           element={<Home />}
         />
 
+        {/* DISPATCHER ONLY */}
+        <Route
+          path="/dispatcher"
+          element={<DispatcherDashboard />}
+        />
+
         {/* CITIZEN REPORTING */}
         <Route
           path="/report"
           element={<ReportPage />}
         />
-        <Route
-         path="/report/confirmation/:ticketId"
-          element={<ConfirmationPage />}
-        />
 
-        {/* DISPATCHER ONLY */}
         <Route
-          path="/dispatcher"
-          element={<DispatcherDashboard />}
+          path="/confirmation/:ticketId"
+          element={<ConfirmationPage />}
         />
 
         {/* 404 */}

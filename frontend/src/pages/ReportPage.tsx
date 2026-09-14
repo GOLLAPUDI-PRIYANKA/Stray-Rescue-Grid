@@ -1,126 +1,165 @@
-// frontend/src/pages/ReportPage.tsx
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import MapPicker from '../components/MapPicker';
-import useGeolocation from '../hooks/useGeolocation';
-import { createTicket } from '../services/citizenApi';
-import { useNavigate } from 'react-router-dom';
-import type { AnimalType } from '../types/citizen';
-
-type FormValues = {
-  animalType: AnimalType;
-  description: string;
-  contact?: string;
-  photos?: FileList;
-};
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import ReportMapPicker from "../components/ReportMapPicker";
+import useGeolocation from "../hooks/useGeolocation";
+import { createCitizenTicket } from "../services/tickets";
+import type { AnimalType, ReportLocation } from "../types/report";
 
 export default function ReportPage() {
-  const { register, handleSubmit, watch } = useForm<FormValues>({
-    defaultValues: { animalType: 'dog', description: '' }
-  });
-  const [latlng, setLatlng] = useState<{ lat: number; lng: number } | null>(null);
-  const { coords, error, request, setCoords } = useGeolocation();
   const navigate = useNavigate();
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [animalType, setAnimalType] = useState<AnimalType>("dog");
+  const [description, setDescription] = useState("");
+  const [contact, setContact] = useState("");
+  const [location, setLocation] = useState<ReportLocation | null>(null);
+  const [locationError, setLocationError] = useState("");
+  const [photoName, setPhotoName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { coords, error: geolocationError, request } = useGeolocation();
 
-  React.useEffect(() => {
-    if (coords) setLatlng(coords);
+  useEffect(() => {
+    if (coords) setLocation(coords);
   }, [coords]);
 
-  const onSubmit = async (data: FormValues) => {
-    if (!latlng) {
-      alert('Please provide a location (use "Use my location" or tap the map).');
-      return;
-    }
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('animal_type', data.animalType);
-      fd.append('description', data.description);
-      fd.append('latitude', String(latlng.lat));
-      fd.append('longitude', String(latlng.lng));
-      if (data.contact) fd.append('contact', data.contact);
-      if (data.photos && data.photos.length > 0) {
-        Array.from(data.photos).forEach((f) => fd.append('photos', f, f.name));
-      }
-
-      const res = await createTicket(fd);
-      navigate(`/report/confirmation/${res.ticket_code ?? res.id ?? 'unknown'}`);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to submit report. See console for details.');
-    } finally {
-      setUploading(false);
-    }
+  const useMyLocation = () => {
+    setLocationError("");
+    request();
   };
 
-  React.useEffect(() => {
-    const sub = watch((value) => {
-      const files = (value as FormValues).photos;
-      if (files && files.length > 0) {
-        const f = files[0];
-        const reader = new FileReader();
-        reader.onload = () => setPreview(String(reader.result));
-        reader.readAsDataURL(f);
-      } else {
-        setPreview(null);
-      }
-    });
-    return () => sub.unsubscribe?.();
-  }, [watch]);
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!location) {
+      setLocationError("Add a location before submitting the report.");
+      return;
+    }
+
+    setSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+    formData.set("animal_type", animalType);
+    formData.set("latitude", String(location.lat));
+    formData.set("longitude", String(location.lng));
+
+    void createCitizenTicket(formData).then(({ ticket_code }) => {
+      navigate(`/confirmation/${ticket_code}`);
+    }).finally(() => setSubmitting(false));
+  };
 
   return (
-    <div className="space-y-6">
-      <section className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-medium mb-2">Report an animal</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Animal type</label>
-            <select {...register('animalType')} className="mt-1 block w-full border rounded p-2">
-              <option value="dog">Dog</option>
-              <option value="cat">Cat</option>
-              <option value="bird">Bird</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+    <section className="report-page">
+      <div className="report-intro">
+        <span className="report-eyebrow">CITIZEN REPORTING</span>
+        <h1>Help us find an animal that needs rescue.</h1>
+        <p>
+          Share a few details and the rescue team will review the report and
+          coordinate the right response.
+        </p>
+        <Link to="/" className="report-back-link">
+          ← Back to home
+        </Link>
+      </div>
 
+      <form className="report-card report-form" onSubmit={onSubmit}>
+        <div className="report-form-heading">
           <div>
-            <label className="block text-sm font-medium">Short description</label>
-            <textarea {...register('description')} rows={3} className="mt-1 block w-full border rounded p-2" />
+            <span className="report-eyebrow">NEW REPORT</span>
+            <h2>Tell us what you saw</h2>
           </div>
+          <span className="required-note">* Required</span>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium">Photo (optional)</label>
-            <input type="file" accept="image/*" {...register('photos')} className="mt-1" />
-            {preview && <img src={preview} alt="preview" className="mt-2 h-32 object-cover rounded" />}
+        <label>
+          Animal type <span>*</span>
+          <select
+            name="animal_type"
+            value={animalType}
+            onChange={(event) => setAnimalType(event.target.value as AnimalType)}
+          >
+            <option value="dog">Dog</option>
+            <option value="cat">Cat</option>
+            <option value="bird">Bird</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          What needs attention? <span>*</span>
+          <textarea
+            name="description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Describe the animal and anything the rescue team should know"
+            rows={5}
+            required
+          />
+        </label>
+
+        <label>
+          Photo <small>(optional)</small>
+          <input
+            name="photos"
+            type="file"
+            accept="image/*"
+            onChange={(event) =>
+              setPhotoName(event.target.files?.[0]?.name ?? "")
+            }
+          />
+          {photoName && <small className="selected-file">{photoName}</small>}
+        </label>
+
+        <div className="location-field">
+          <div className="field-label">
+            <span>
+              Location <span>*</span>
+            </span>
+            {location && (
+              <small>
+                {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+              </small>
+            )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium">Contact (optional)</label>
-            <input type="text" {...register('contact')} placeholder="Phone or email" className="mt-1 block w-full border rounded p-2" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Location</label>
-            <div className="flex gap-2 mt-1">
-              <button type="button" onClick={request} className="px-3 py-2 bg-blue-600 text-white rounded">Use my location</button>
-              <button type="button" onClick={() => { setLatlng(null); setCoords(null); }} className="px-3 py-2 bg-gray-200 rounded">Clear</button>
-            </div>
-            {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
-            <div className="mt-3">
-              <MapPicker latlng={latlng} setLatlng={setLatlng} />
-              {latlng && <div className="text-sm text-gray-600 mt-2">Selected: {latlng.lat.toFixed(6)}, {latlng.lng.toFixed(6)}</div>}
-            </div>
-          </div>
-
-          <div>
-            <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded" disabled={uploading}>
-              {uploading ? 'Submitting...' : 'Submit report'}
+          <div className="location-actions">
+            <button type="button" className="secondary-action" onClick={useMyLocation}>
+              Use my location
             </button>
+            {location && (
+              <button
+                type="button"
+                className="clear-location"
+                onClick={() => setLocation(null)}
+              >
+                Clear
+              </button>
+            )}
           </div>
-        </form>
-      </section>
-    </div>
+          <ReportMapPicker location={location} onChange={setLocation} />
+          <div className={`location-preview ${location ? "location-selected" : ""}`}>
+            <span className="location-pin">●</span>
+            {location ? "Location selected." : "Click the map or use your location."}
+          </div>
+          {(locationError || geolocationError) && (
+            <p className="form-error">{locationError || geolocationError}</p>
+          )}
+        </div>
+
+        <label>
+          Contact details <small>(optional)</small>
+          <input
+            name="contact"
+            type="text"
+            value={contact}
+            onChange={(event) => setContact(event.target.value)}
+            placeholder="Phone number or email"
+          />
+        </label>
+
+        <button
+          type="submit"
+          className="primary-action report-submit"
+          disabled={submitting}
+        >
+          {submitting ? "Sending report..." : "Submit report"}
+          <span>→</span>
+        </button>
+      </form>
+    </section>
   );
 }

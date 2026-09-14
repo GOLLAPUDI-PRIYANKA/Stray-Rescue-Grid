@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
   { label: "Home", path: "/" },
+  { label: "Report an animal", path: "/report" },
   { label: "Dispatcher", path: "/dispatcher" },
 ];
 
 export default function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <header className="site-navbar">
       <div className="navbar-inner">
@@ -20,7 +24,23 @@ export default function Navbar() {
           </span>
         </NavLink>
 
-        <nav className="navbar-links">
+        <button
+          type="button"
+          className="navbar-menu-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <nav
+          id="primary-navigation"
+          className={`navbar-links ${menuOpen ? "navbar-links-open" : ""}`}
+        >
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -30,6 +50,7 @@ export default function Navbar() {
                   isActive ? "navbar-link-active" : ""
                 }`
               }
+              onClick={() => setMenuOpen(false)}
             >
               {item.label}
             </NavLink>

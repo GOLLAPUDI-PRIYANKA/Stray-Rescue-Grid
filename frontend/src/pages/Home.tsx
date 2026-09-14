@@ -25,6 +25,10 @@ export default function Home() {
           </p>
 
           <div className="home-actions">
+            <Link to="/report" className="secondary-action">
+              Report an animal
+            </Link>
+
             <Link to="/dispatcher" className="primary-action">
               Open Dispatcher
               <span>→</span>

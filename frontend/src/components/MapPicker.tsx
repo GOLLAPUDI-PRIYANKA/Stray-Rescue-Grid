@@ -1,7 +1,6 @@
 // frontend/src/components/MapPicker.tsx
-import React from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L, { LatLngExpression } from 'leaflet';
+import L, { type LatLngExpression } from 'leaflet';
 
 // Fix default icon issues with Leaflet + Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;

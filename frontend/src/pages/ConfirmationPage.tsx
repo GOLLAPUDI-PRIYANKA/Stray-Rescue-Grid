@@ -1,17 +1,26 @@
-// frontend/src/pages/ConfirmationPage.tsx
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from "react-router-dom";
 
 export default function ConfirmationPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
+
   return (
-    <div className="bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-semibold">Report submitted</h2>
-      <p className="mt-4">Thank you — your report has been recorded.</p>
-      <p className="mt-2">Reference: <strong>{ticketId}</strong></p>
-      <div className="mt-4">
-        <Link to="/report" className="text-blue-600">Submit another report</Link>
+    <section className="report-page">
+      <div className="report-card confirmation-card">
+        <span className="report-eyebrow">REPORT RECEIVED</span>
+        <h1>Thank you for helping an animal in need.</h1>
+        <p>
+          Your report has been added to the rescue queue. A dispatcher can now
+          review the location and coordinate a response.
+        </p>
+        <div className="reference-card">
+          <span>Reference number</span>
+          <strong>{ticketId ?? "Pending"}</strong>
+        </div>
+        <Link to="/report" className="primary-action">
+          Submit another report
+          <span>→</span>
+        </Link>
       </div>
-    </div>
+    </section>
   );
 }
